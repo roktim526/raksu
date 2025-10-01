@@ -812,7 +812,7 @@
             readCandidates();
             
             // Start automatic vote updates every 5 seconds
-            setInterval(updateAllVotes, 30000);
+            setInterval(updateAllVotes, 1000);
         }
 
         // Function to display candidates from Firebase
@@ -1166,7 +1166,7 @@
                         console.log(`${voteType} recorded for candidate ${candidateId}`);
                         
                         // Refresh the display to show updated counts
-                        readCandidates();
+                        //readCandidates();
                     }
                 }
             } catch (error) {
