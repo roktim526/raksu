@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rajshahi University Central Student Union</title>
@@ -610,13 +611,19 @@
                 </select>
             </div>
             <div class="filter-group">
+                <label class="filter-label">Central/Senate/Hall</label>
+                <select class="filter-select" id="central-senate-filter">
+                    <option value="all">All</option>
+                </select>
+            </div>            
+            <div class="filter-group">
                 <label class="filter-label">Hall</label>
                 <select class="filter-select" id="hall-filter">
                     <option value="all">All Halls</option>
                 </select>
             </div>
             <div class="filter-group">
-                <label class="filter-label">Panel/Individual</label>
+                <label class="filter-label">Panel</label>
                 <select class="filter-select" id="panel-filter">
                     <option value="all">All</option>
                 </select>
@@ -628,12 +635,7 @@
                     <option value="name">Name</option>
                 </select>
             </div>
-            <div class="filter-group">
-                <label class="filter-label">Central/Senate</label>
-                <select class="filter-select" id="central-senate-filter">
-                    <option value="all">All</option>
-                </select>
-            </div>
+
           
         </div>
         <!-- Voting Statistics -->
@@ -699,7 +701,7 @@
 
     <footer>
         <div class="container">
-            <p>© 2025 RUCSU Election Portal | Made for students, by ক্যাম্পাস নির্বাচন বার্তা</p>
+            <p>© 2025 Student Election Portal | Made for students, by students</p>
         </div>
     </footer>
 
@@ -750,7 +752,7 @@
                     console.log('All votes updated automatically');
                     
                     // Refresh the display
-                    //readCandidates();
+                    readCandidates();
                 }
             } catch (error) {
                 console.error("Error updating votes:", error);
@@ -786,6 +788,33 @@
         let currentLanguage = 'english';
         let currentTheme = 'light';
         let candidates = [];
+        let currentFilters = {
+            position: 'all',
+            hall: 'all',
+            panel: 'all',
+            centralSenate: 'all',
+            sortBy: 'ballot'
+        };
+
+        // Function to save current filter state
+        function saveFilterState() {
+            currentFilters = {
+                position: positionFilter.value,
+                hall: hallFilter.value,
+                panel: panelFilter.value,
+                centralSenate: centralSenateFilter.value,
+                sortBy: sortBy.value
+            };
+        }
+
+        // Function to restore filter state
+        function restoreFilterState() {
+            positionFilter.value = currentFilters.position;
+            hallFilter.value = currentFilters.hall;
+            panelFilter.value = currentFilters.panel;
+            centralSenateFilter.value = currentFilters.centralSenate;
+            sortBy.value = currentFilters.sortBy;
+        }
 
         // Function to check if an image URL is valid and loadable
         function isValidImageUrl(url) {
@@ -811,18 +840,25 @@
             setupEventListeners();
             readCandidates();
             
-            // Start automatic vote updates every 5 seconds
+            // Start automatic vote updates every 1 seconds
             setInterval(updateAllVotes, 1000);
         }
 
         // Function to display candidates from Firebase
         async function readCandidates() {
+            // Save current filter state before reloading
+            saveFilterState();
+
             const dbRef = ref(db);
             try {
                 const snapshot = await get(child(dbRef, "rucsu"));
                 if (snapshot.exists()) {
                     candidates = snapshot.val();
                     populateFilters();
+
+                    // Restore filter state after populating filters
+                    restoreFilterState();
+
                     renderCandidates();
                     renderFavorites();
                     updateStats();
@@ -844,10 +880,10 @@
             centralSenateFilter.innerHTML = '<option value="all">All</option>';
 
             // Get unique values from candidates
-            const centralSenateTypes = [...new Set(candidates.map(c => c["Central/Senate/Hall"]))].filter(t => t && t !== 'N/A');
+            const centralSenateTypes = [...new Set(candidates.map(c => c["rucsu"]))].filter(t => t && t !== 'N/A');
             const positions = [...new Set(candidates.map(c => c.position))].filter(p => p);
             const halls = [...new Set(candidates.map(c => c.hall))].filter(h => h && h !== 'N/A');
-            const panels = [...new Set(candidates.map(c => c['Panel/Individual']))].filter(p => p && p !== 'N/A');
+            const panels = [...new Set(candidates.map(c => c['Panel']))].filter(p => p && p !== 'N/A');
 
             // Populate Central/Senate filter
             centralSenateTypes.forEach(type => {
@@ -893,10 +929,10 @@
             
             // Filter candidates
             let filteredCandidates = candidates.filter(candidate => {
-                const matchesCentralSenate = centralSenateValue === 'all' || candidate["Central/Senate/Hall"] === centralSenateValue;
+                const matchesCentralSenate = centralSenateValue === 'all' || candidate["rucsu"] === centralSenateValue;
                 const matchesPosition = positionValue === 'all' || candidate.position === positionValue;
                 const matchesHall = hallValue === 'all' || candidate.hall === hallValue;
-                const matchesPanel = panelValue === 'all' || candidate['Panel/Individual'] === panelValue;
+                const matchesPanel = panelValue === 'all' || candidate['Panel'] === panelValue;
                 const matchesSearch = searchValue === '' ||
                     candidate.name.toLowerCase().includes(searchValue) ||
                     candidate.ballot_no.toString().includes(searchValue);
@@ -958,7 +994,7 @@
                                 <span class="hide-voter-no">Voter No: ${candidate.Voter_No}<br></span>
                                 Position: ${candidate.position}<br>
                                 ${candidate.hall && candidate.hall !== 'N/A' ? `Hall: ${candidate.hall}<br>` : ''}
-                                Type: ${candidate['Panel/Individual']}
+                                Type: ${candidate['Panel']}
                             </p>
                             
                             <!-- Vote buttons section -->
@@ -1037,7 +1073,7 @@
                                 Voter No: ${candidate.Voter_No}<br>
                                 Position: ${candidate.position}<br>
                                 ${candidate.hall && candidate.hall !== 'N/A' ? `Hall: ${candidate.hall}<br>` : ''}
-                                Type: ${candidate['Panel/Individual']}
+                                Type: ${candidate['Panel']}
                             </p>
                             
                             <!-- Vote buttons section -->
@@ -1152,21 +1188,21 @@
                 if (snapshot.exists()) {
                     const candidates = snapshot.val();
                     const candidateIndex = candidates.findIndex(c => c.Voter_No === candidateId);
-                    
+
                     if (candidateIndex !== -1) {
                         const updates = {};
-                        
+
                         if (voteType === 'upvote') {
                             updates[`rucsu/${candidateIndex}/upvotes`] = candidates[candidateIndex].upvotes + 1;
                         } else if (voteType === 'downvote') {
                             updates[`rucsu/${candidateIndex}/downvotes`] = candidates[candidateIndex].downvotes + 1;
                         }
-                        
+
                         await update(ref(db), updates);
                         console.log(`${voteType} recorded for candidate ${candidateId}`);
-                        
-                        // Refresh the display to show updated counts
-                        //readCandidates();
+
+                        // Refresh the display to show updated counts (filters will be preserved)
+                        readCandidates();
                     }
                 }
             } catch (error) {
@@ -1221,7 +1257,7 @@
                     <p><strong>Voter No:</strong> ${candidate.Voter_No}</p>
                     <p><strong>Position:</strong> ${candidate.position}</p>
                     ${candidate.hall && candidate.hall !== 'N/A' ? `<p><strong>Hall:</strong> ${candidate.hall}</p>` : ''}
-                    <p><strong>Panel/Individual:</strong> ${candidate['Panel/Individual']}</p>
+                    <p><strong>Panel/Individual:</strong> ${candidate['Panel']}</p>
                     <p><strong>Upvotes:</strong> ${candidate.upvotes}</p>
                     <p><strong>Downvotes:</strong> ${candidate.downvotes}</p>
                     <p><strong>Score:</strong> ${getScore(candidate)}</p>
